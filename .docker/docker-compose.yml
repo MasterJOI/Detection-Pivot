@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  backend:
+    image: lecturedocker/backend:latest
+    container_name: backend
+    ports:
+      - '5000:5000'
+    volumes:
+      - shared:/mindbridge/assets
+    env_file:
+      - ./backend.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  frontend:
+    image: lecturedocker/frontend:latest
+    container_name: frontend
+    domainname: 'mindbridge'
+    depends_on:
+      - backend
+    ports:
+      - '80:80'
+      - '443:443'    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # volumes:
+    #   - /data/certs:/etc/nginx/certs
+    #   - /knewless-data/assets:/knewless/assets
+    #   - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
+    #   - /etc/nginx/dhparam.pem:/etc/nginx/dhparam.pem
+    #   - /etc/letsencrypt/live/knewless.tk/cert.pem:/etc/letsencrypt/live/knewless.tk/cert.pem
+    #   - /etc/letsencrypt/live/knewless.tk/chain.pem:/etc/letsencrypt/live/knewless.tk/chain.pem
+    #   - /etc/letsencrypt/live/knewless.tk/fullchain.pem:/etc/letsencrypt/live/knewless.tk/fullchain.pem
+    #   - /etc/letsencrypt/live/knewless.tk/privkey.pem:/etc/letsencrypt/live/knewless.tk/privkey.pem
+
+#   elasticsearch:
+#     image: docker.elastic.co/elasticsearch/elasticsearch:7.8.1
+#     container_name: elasticsearch
+#     ulimits:
+#       memlock:
+#         soft: -1
+#         hard: -1
+#     env_file:
+#       - ~/.env/elastic.env
+#     volumes:
+#       - esdata:/usr/share/elasticsearch/data
+#     ports:
+#       - 9200:9200
+
+volumes:
+  shared:
+    driver: azure_file
+    driver_opts:
+      share_name: shared
+      storage_account_name: mindbridgestorage  
