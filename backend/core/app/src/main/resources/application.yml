@@ -1,0 +1,9 @@
+sniffer:
+
+    nifNumber: 4 # interface Number
+
+    count: 1000 # packets count
+
+    read_timeout: 10 # [ms]
+
+    snaplen: 65536 # max len of packet [bytes]

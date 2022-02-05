@@ -1,0 +1,17 @@
+@import '../../../styles/common_variables.sass';
+
+.button {
+  border-radius: 0.2rem;
+  border: none;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0);
+  color: $dark-grey;
+  font-size: 1.2857rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  margin: 0.1rem;
+}
+
+.button:hover{
+   background-color: $light-blue;
+}

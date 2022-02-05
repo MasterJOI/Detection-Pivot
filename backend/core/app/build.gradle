@@ -1,7 +1,7 @@
 plugins {
-	id 'org.springframework.boot' version '2.3.5.RELEASE'
+	id 'org.springframework.boot' version '2.6.1'
 	id "org.flywaydb.flyway" version "7.2.1"
-	id "io.freefair.lombok" version "5.3.0"
+	id "io.freefair.lombok" version "6.3.0"
 }
 
 dependencies {
@@ -23,6 +23,12 @@ dependencies {
 	implementation "org.mapstruct:mapstruct:${mapstruct}"
 	implementation "org.apache.commons:commons-lang3:${apache_commons_lang}"
 	implementation "com.google.guava:guava:30.0-jre"
+	implementation "org.springframework.boot:spring-boot-starter-websocket"
+	implementation group: 'org.pcap4j', name: 'pcap4j-packetfactory-static', version: '1.8.2'
+	implementation group: 'org.pcap4j', name: 'pcap4j-core', version: '1.8.2'
+	implementation group: 'com.corundumstudio.socketio', name: 'netty-socketio', version: '1.7.19'
+
+
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.postgresql:postgresql'
@@ -38,7 +44,7 @@ dependencies {
 	testImplementation 'org.springframework.amqp:spring-rabbit-test'
 	testImplementation 'com.h2database:h2'
 
-	compile project(':db')
+	implementation project(':db')
 }
 
 test {
@@ -46,7 +52,7 @@ test {
 }
 
 flyway {
-	url = 'jdbc:postgresql://localhost:5432/mindbridge'
+	url = 'jdbc:postgresql://localhost:5432/detection_pivot'
 	user = 'postgres'
 	password = 'admin'
 }

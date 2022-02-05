@@ -1,6 +1,6 @@
-name: 'Deploy Mindbridge'
+name: 'Deploy DetectionPivot'
 
-on:  
+on:
   push:
     branches:
       - main
@@ -35,7 +35,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Build And Push Backend docker image
-        id: docker-build-backend        
+        id: docker-build-backend
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -44,7 +44,7 @@ jobs:
           tags: ${{ secrets.BACKEND_DOCKER_REGISTRY }}:latest
 
       - name: Build And Push Frontend docker image
-        id: docker-build-frontend  
+        id: docker-build-frontend
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -56,7 +56,7 @@ jobs:
         run: >
           curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
-      - name: Login to azure with docker        
+      - name: Login to azure with docker
         run: "docker login azure --client-id $AZURE_CLIENT_ID --client-secret $AZURE_CLIENT_SECRET --tenant-id $AZURE_TENANT_ID"
         env:
           AZURE_TENANT_ID: '${{ secrets.AZURE_TENANT_ID }}'
@@ -65,7 +65,7 @@ jobs:
 
       - name: Download environment files
         run: |
-          az storage file download --path ./backend.env --share-name shared --account-name mindbridgestorage --account-key $AZURE_STORAGE_KEY --dest .docker/backend.env 
+          az storage file download --path ./backend.env --share-name shared --account-name mindbridgestorage --account-key $AZURE_STORAGE_KEY --dest .docker/backend.env
         env:
           AZURE_STORAGE_KEY: '${{ secrets.AZURE_STORAGE_KEY }}'
 
