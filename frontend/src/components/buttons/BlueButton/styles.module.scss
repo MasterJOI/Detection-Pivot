@@ -1,0 +1,13 @@
+@import '../../../styles/common_variables.sass';
+
+.button {
+  border-radius: 0.2rem;
+  border: none;
+  width: 100%;
+  background-color: $light-blue;
+  color: $dark-grey;
+  font-size: 1.2857rem !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+  margin: 0.1rem;
+}

@@ -1,15 +1,15 @@
 import React, { FunctionComponent } from 'react';
 import { Loader } from 'semantic-ui-react';
-import { LoaderProps } from 'semantic-ui-react/dist/commonjs/elements/Loader/Loader';
+import styles from './styles.module.scss';
 
-interface ILoaderWrapperProps extends LoaderProps {
+interface ILoaderWrapperProps {
   loading: boolean;
 }
 
 const LoaderWrapper: FunctionComponent<ILoaderWrapperProps> = ({ loading, children, ...props }) => (
   loading
     ? (
-      <Loader active {...props} />
+      <Loader active {...props} className={styles.MainLoader} />
     ) : (
       <>
         {children}

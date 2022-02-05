@@ -1,12 +1,6 @@
+import * as queryString from 'query-string';
 import { toastr } from 'react-redux-toastr';
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-
-function handleBadResponse(error: AxiosError) {
-  if (error.response.status === 401) {
-    // logout
-  }
-  throw error.response.data;
-}
 
 function handleMissingResponse(error: AxiosError) {
   const errorMessage = 'No response was received';
@@ -32,16 +26,14 @@ function handleBadRequest(error: AxiosError) {
 }
 
 function handleApiCallError(error: AxiosError): void {
-  if (error.response) {
-    handleBadResponse(error);
-  } else if (error.request) {
+  if (error.request) {
     handleMissingResponse(error);
   } else {
     handleBadRequest(error);
   }
 }
 
-export const callApi = async (path: string, config: AxiosRequestConfig): Promise<any> => {
+const callApi = async (path: string, config: AxiosRequestConfig): Promise<any> => {
   try {
     return (await axios(path, config)).data;
   } catch (e) {

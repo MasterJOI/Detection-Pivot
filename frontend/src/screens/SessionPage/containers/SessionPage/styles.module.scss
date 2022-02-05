@@ -1,0 +1,7 @@
+:global(.ui.button).disableButton {
+  cursor: not-allowed;
+  pointer-events: none;
+  background: #bcbec0;
+  border-color: transparent;
+}
+

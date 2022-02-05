@@ -1,0 +1,52 @@
+@import "src/styles/fonts";
+@import "src/styles/common_variables";
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap');
+
+.threadForm {
+  padding: 0 0 5rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  position: relative;
+
+  * {
+    font-family: 'Lato', serif;
+  }
+
+  :global(.ui.form) {
+    width: 40%;
+  }
+
+  label {
+    width: 100% !important;
+    line-height: 1rem !important;
+    color: $dark-grey !important;
+    font-weight: bold !important;
+    font-size: 0.95rem !important;
+  }
+
+  .buttonWrapper {
+    width: 100%;
+    display: flex;
+    padding: 0.2rem 0 0.2rem 0;
+  }
+
+  .submitButton {
+    width: 100%;
+    background-color: $dark-grey;
+    box-sizing: border-box;
+    border-radius: 7px;
+    color: white;
+    font-weight: bold;
+    font-size: 1.15rem;
+    line-height: 3rem;
+    border: 2px solid $dark-grey;
+    transition: 0.3s;
+
+    &:hover {
+      color: $dark-grey;
+      background-color: white;
+    }
+  }
+}
