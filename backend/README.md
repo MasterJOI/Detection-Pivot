@@ -1,4 +1,4 @@
-# Detection-Pivot| WebAPI
+# Detection-Pivot | WebAPI
 
 ## Setup
 
