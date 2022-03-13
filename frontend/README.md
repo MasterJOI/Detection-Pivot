@@ -1,4 +1,4 @@
-# Mindbridge | Browser client
+# Detection-Pivot | Browser client
 
 ## Setup
 
