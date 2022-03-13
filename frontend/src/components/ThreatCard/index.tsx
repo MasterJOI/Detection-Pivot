@@ -32,17 +32,20 @@ const ThreatCard: FunctionComponent<IThreatCardProps> = ({
           <div className={styles.cardInfo}>
             <span>{moment(threat.createdAt).format('DD-MM-YYYY, h:mm:ss')}</span>
             <span>{threat.title}</span>
-            <Checkbox
-              toggle
-              onChange={getToggleAction}
-              checked={threat.active}
-            />
-            <Button
-              icon
-              onClick={getDeleteAction}
-            >
-              <Icon name="trash alternate" />
-            </Button>
+            <div className={styles.toggleDelWrp}>
+              <Checkbox
+                className={styles.toggleBtn}
+                toggle
+                onChange={getToggleAction}
+                checked={threat.active}
+              />
+              <Button
+                icon
+                onClick={getDeleteAction}
+              >
+                <Icon name="trash alternate" />
+              </Button>
+            </div>
           </div>
         ) : (
           <div>

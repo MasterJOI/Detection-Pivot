@@ -102,8 +102,8 @@ const ThreatsList: React.FC<IThreatListPageProps> = (
       <SegmentHeader
         size="h2"
         iconName="list"
-        content="Saved threats"
-        subheader="You can delete all data about the threat and captured packets by clicking the button 'Delete'"
+        content="Saved IoC"
+        subheader="You can delete all data about the IoC and captured packets by clicking the button 'Delete'"
       />
       )}
       <InfiniteScroll
@@ -126,7 +126,7 @@ const ThreatsList: React.FC<IThreatListPageProps> = (
             />
           ))
         ) : (
-          <NotFoundContent description="Threat list is empty" />
+          <NotFoundContent description="IoC list is empty" />
         )}
       </InfiniteScroll>
     </main>

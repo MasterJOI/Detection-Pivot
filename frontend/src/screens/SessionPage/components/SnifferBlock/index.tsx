@@ -61,6 +61,8 @@ const SnifferBlock: React.FC<ISnifferBlockProps> = (
     closeSession({ sessionId: session.id });
   };
 
+  const noRowsRenderer = () => <div className={styles.noRows}>No rows</div>;
+
   return (
     <main>
       { session ? (
@@ -90,8 +92,11 @@ const SnifferBlock: React.FC<ISnifferBlockProps> = (
           <AutoSizer>
             {({ width }) => (
               <Table
+                className={styles.Table}
                 width={width}
                 height={560}
+                headerClassName={styles.headerColumn}
+                noRowsRenderer={noRowsRenderer}
                 headerHeight={30}
                 rowHeight={30}
                 rowCount={data.length}
@@ -105,45 +110,44 @@ const SnifferBlock: React.FC<ISnifferBlockProps> = (
                   width={200}
                 />
                 <Column
-                  width={200}
                   label="Source MAC"
                   dataKey="macSrc"
+                  width={120}
                 />
                 <Column
-                  width={200}
                   label="Destination MAC"
                   dataKey="macDst"
+                  width={120}
                 />
                 <Column
-                  width={200}
                   label="Source IP"
                   dataKey="ipSrc"
+                  width={100}
                 />
                 <Column
-                  width={200}
                   label="Destination IP"
                   dataKey="ipDst"
+                  width={120}
                 />
                 <Column
-                  width={200}
                   label="Transport protocol"
                   dataKey="protocol"
+                  width={150}
                 />
                 <Column
-                  width={200}
                   label="Source port"
                   dataKey="portSrc"
+                  width={100}
                 />
                 <Column
-                  width={200}
                   label="Destination port"
                   dataKey="portDst"
+                  width={120}
                 />
-                <Column
-                  width={200}
+                {/* <Column
                   label="DNS"
                   dataKey="dnsName"
-                />
+                />*/}
               </Table>
             )}
           </AutoSizer>

@@ -3,12 +3,20 @@ package com.detectionpivot.core.sniffer;
 import com.detectionpivot.core.domains.packet.PacketMapper;
 import com.detectionpivot.core.domains.packet.PacketService;
 import com.detectionpivot.core.domains.packet.dto.PacketDto;
-import com.detectionpivot.core.domains.packet.dto.TablePacketDto;
 import com.detectionpivot.core.sniffer.dto.CheckForm;
 import com.detectionpivot.core.socket.WebSocketController;
 import com.detectionpivot.data.domains.threat.model.Threat;
-import org.pcap4j.core.*;
-import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
+import org.jnetpcap.Pcap;
+import org.jnetpcap.PcapBpfProgram;
+import org.jnetpcap.nio.JMemory;
+import org.jnetpcap.packet.PcapPacket;
+import org.jnetpcap.packet.PcapPacketHandler;
+import org.jnetpcap.packet.format.FormatUtils;
+import org.jnetpcap.protocol.lan.Ethernet;
+import org.jnetpcap.protocol.network.Ip4;
+import org.jnetpcap.protocol.tcpip.Http;
+import org.jnetpcap.protocol.tcpip.Tcp;
+import org.jnetpcap.protocol.tcpip.Udp;
 import org.pcap4j.packet.*;
 import org.pcap4j.packet.namednumber.DnsResourceRecordType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +24,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.net.InetAddress;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.*;
 
 @Component
@@ -27,7 +37,7 @@ public class SnifferProvider {
 
 	private final PacketService packetService;
 
-	private PcapHandle pcapHandle = null;
+	private static Pcap pcap;
 
 	private final Map<DnsDomainName, List<String>> dnsMap = new HashMap<>();
 
@@ -40,110 +50,156 @@ public class SnifferProvider {
 
 	public void runSniffer(String interfaceName) {
 
-		PcapNetworkInterface nif;
-		String filter = "";
+		StringBuilder errbuf = new StringBuilder();
 
-		try {
-			nif = Pcaps.getDevByName(interfaceName);
+		pcap = Pcap.openLive(interfaceName,
+			snifferProperties.getSnaplen(),
+			Pcap.MODE_PROMISCUOUS,
+			snifferProperties.getRead_timeout(),
+			errbuf
+		);
 
-			System.out.println(nif.getName() + "(" + nif.getDescription() + ")");
+		if (pcap == null) {
+			throw new SnifferException("Unable to open device for capture! Error: " + errbuf, "sniffer-pcap");
+		}
 
-			pcapHandle = nif.openLive(snifferProperties.getSnaplen(),
-				PromiscuousMode.PROMISCUOUS,
-				snifferProperties.getRead_timeout());
-
-			pcapHandle.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE);
-
-		} catch (PcapNativeException pcapEx) {
-			throw new SnifferException("An error occurs in the pcap native library", "sniffer-pcap");
-		} catch (NotOpenException e) {
-			throw new SnifferException("PcapHandle not open!", "pcap-handle-off");
+		PcapBpfProgram program = new PcapBpfProgram();
+		String expr = "";
+		int optimize = 0;
+		int netmask = 0xFFFFFF00;
+		if (pcap.compile(program, expr, optimize, netmask) != Pcap.OK) {
+			throw new SnifferException("Pcap: can't compile BPF. Error: " + errbuf, "sniffer-pcap");
+		}
+		if (pcap.setFilter(program) != Pcap.OK) {
+			throw new SnifferException("Pcap: Can't set filter. Error: " + errbuf, "sniffer-pcap");
 		}
 	}
 
 	@Async
 	public void sniff(UUID currentSessionId, Set<Threat> threatSet) {
-		int count = 0;
-		CheckForm checkForm = new CheckForm();
-		while (pcapHandle.isOpen()) {
-			try {
-				Packet packet = pcapHandle.getNextPacket();
-				if (packet == null) continue;
-				PacketDto packetDto = getNextPacketDto(packet, count, currentSessionId);
 
-				// check for threats
-				if (threatSet != null) {
-					threatSet.stream().filter(threat -> checkThreat(threat, packetDto, checkForm))
-						.forEach(threat -> {
-							packetDto.getThreatList().add(threat);
-							packetDto.setSuspicious(true);
-						});
-					checkForm.setFalse();
-				}
+		/* PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<>() {
 
-				// save packet to the db
-				packetService.savePacket(packetDto);
+			public void nextPacket(PcapPacket pcapPacket, String user) {
 
-				//map and send packet
-				webSocketController.sendMessage(PacketMapper.MAPPER.packetDtoToTablePacketDto(packetDto));
-				count++;
-				if (count >= snifferProperties.getCount()) {
-					break;
-				}
-			} catch (NotOpenException e) {
-				throw new SnifferException("PcapHandle not open!", "pcap-handle-off");
+				identifyPacket(pcapPacket, currentSessionId, threatSet);
 			}
+		};*/
+		// pcap.loop(Pcap.LOOP_INFINITE, jpacketHandler, "");
+		final PcapPacket packet = new PcapPacket(JMemory.POINTER);
+		identifyPacket(packet, currentSessionId, threatSet);
+	}
+
+	public void identifyPacket(PcapPacket pcapPacket, UUID currentSessionId, Set<Threat> threatSet) {
+
+		Ethernet eth = new Ethernet();
+		Ip4 ip4 = new Ip4();
+		Tcp tcp = new Tcp();
+		Udp udp = new Udp();
+		Http http = new Http();
+
+		CheckForm checkForm = new CheckForm();
+
+		while (pcap != null) {
+			pcap.nextEx(pcapPacket);
+			if (!pcapPacket.hasHeader(eth)) continue;
+
+			PacketDto packetDto = new PacketDto();
+
+			packetDto.setSessionId(currentSessionId);
+			packetDto.setInterceptedAt(Timestamp.from(Instant.now()));
+			if (pcapPacket.hasHeader(eth)) {
+				packetDto.setMacSrc(FormatUtils.mac(eth.source()));
+				packetDto.setMacDst(FormatUtils.mac(eth.destination()));
+
+				if (pcapPacket.hasHeader(ip4)) {
+					packetDto.setIpSrc(FormatUtils.ip(ip4.source()));
+					packetDto.setIpDst(FormatUtils.ip(ip4.destination()));
+
+					if (pcapPacket.hasHeader(tcp)) {
+						packetDto.setProtocol("TCP");
+						packetDto.setPortSrc(String.valueOf(tcp.source()));
+						packetDto.setPortDst(String.valueOf(tcp.destination()));
+
+						if (pcapPacket.hasHeader(http)) {
+
+						}
+
+					} else if (pcapPacket.hasHeader(udp)) {
+						packetDto.setProtocol("UDP");
+						packetDto.setPortSrc(String.valueOf(udp.source()));
+						packetDto.setPortDst(String.valueOf(udp.destination()));
+					}
+				}
+			}
+			packetDto.setPayload("some info");
+
+			// check for threats
+			if (threatSet != null) {
+				threatSet.stream().filter(threat -> checkThreat(threat, packetDto, checkForm))
+					.forEach(threat -> {
+						packetDto.getThreatList().add(threat);
+						packetDto.setSuspicious(true);
+					});
+				checkForm.setFalse();
+			}
+
+			// save packet to the db
+			packetService.savePacket(packetDto);
+
+			//map and send packet
+			webSocketController.sendMessage(PacketMapper.MAPPER.packetDtoToTablePacketDto(packetDto));
 		}
 	}
 
 	public boolean checkThreat(Threat threat, PacketDto packetDto, CheckForm checkForm) {
 
-		if(!threat.getMacsSrc().isEmpty()) {
+		if (!threat.getMacsSrc().isEmpty()) {
 			checkForm.setMacSrc(Arrays.asList(threat.getMacsSrc()
 				.split("~")).contains(packetDto.getMacSrc()));
 		}
 
-		if(!threat.getMacsDst().isEmpty()) {
+		if (!threat.getMacsDst().isEmpty()) {
 			checkForm.setMacDst(Arrays.asList(threat.getMacsDst()
 				.split("~")).contains(packetDto.getMacDst()));
 		}
 
-		if(!threat.getIpsSrc().isEmpty()) {
+		if (!threat.getIpsSrc().isEmpty()) {
 			checkForm.setIpSrc(Arrays.asList(threat.getIpsSrc()
 				.split("~")).contains(packetDto.getIpSrc()));
 		}
 
-		if(!threat.getIpsDst().isEmpty()) {
+		if (!threat.getIpsDst().isEmpty()) {
 			checkForm.setIpDst(Arrays.asList(threat.getIpsDst()
 				.split("~")).contains(packetDto.getIpDst()));
 		}
 
-		if(!threat.getIpsSrc().isEmpty()) {
+		if (!threat.getIpsSrc().isEmpty()) {
 			checkForm.setIpSrc(Arrays.asList(threat.getIpsSrc()
 				.split("~")).contains(packetDto.getIpSrc()));
 		}
 
-		if(!threat.getProtocol().isEmpty()) {
+		if (!threat.getProtocol().isEmpty()) {
 			checkForm.setProtocol(packetDto.getProtocol().contains(threat.getProtocol()));
 		}
 
-		if(!threat.getPortsSrc().isEmpty()) {
+		if (!threat.getPortsSrc().isEmpty()) {
 			checkForm.setPortSrc(Arrays.asList(threat.getPortsSrc()
 				.split("~")).contains(packetDto.getPortSrc()));
 		}
 
-		if(!threat.getPortsDst().isEmpty()) {
+		if (!threat.getPortsDst().isEmpty()) {
 			checkForm.setPortDst(Arrays.asList(threat.getPortsDst()
 				.split("~")).contains(packetDto.getPortDst()));
 		}
 
-		if(!threat.getPayload().isEmpty()) {
+		if (!threat.getPayload().isEmpty()) {
 			checkForm.setPayload(packetDto.getPayload().contains(threat.getPayload()));
 		}
 
 		return checkForm.isMacSrc() || checkForm.isMacDst() || checkForm.isIpSrc()
-		|| checkForm.isIpDst() || checkForm.isProtocol() || checkForm.isPortSrc()
-		|| checkForm.isPortDst() || checkForm.isPayload();
+			|| checkForm.isIpDst() || checkForm.isProtocol() || checkForm.isPortSrc()
+			|| checkForm.isPortDst() || checkForm.isPayload();
 	}
 
 	private PacketDto getNextPacketDto(Packet packet, int count, UUID sessionId) {
@@ -188,7 +244,7 @@ public class SnifferProvider {
 		//building packetDto
 		PacketDto packetDto = new PacketDto();
 		packetDto.setSessionId(sessionId);
-		packetDto.setInterceptedAt(pcapHandle.getTimestamp());
+		// packetDto.setInterceptedAt(pcapHandle.getTimestamp());
 		packetDto.setMacSrc(ethernetPacket.getHeader().getSrcAddr().toString());
 		packetDto.setMacDst(ethernetPacket.getHeader().getDstAddr().toString());
 		packetDto.setIpSrc(srcIp.getHostAddress());
@@ -222,6 +278,6 @@ public class SnifferProvider {
 	}
 
 	public void stopSniffer() {
-		if (pcapHandle != null && pcapHandle.isOpen()) pcapHandle.close();
+		pcap.close();
 	}
 }

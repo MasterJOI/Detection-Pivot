@@ -26,17 +26,15 @@ const SessionCard: FunctionComponent<ISessionCardProps> = ({
           <div className={styles.cardInfo}>
             <span>{moment(session.createdAt).format('DD-MM-YYYY, h:mm:ss')}</span>
             <span>{session.interfaceDescription}</span>
-            <span>
-              Status:
-              {' '}
-              {session.state}
-            </span>
-            <Button
-              icon
-              onClick={getDeleteAction}
-            >
-              <Icon name="trash alternate" />
-            </Button>
+            <div className={styles.statusDelWrp}>
+              <div className={session.state === 'open' ? styles.openState : styles.closeState}>{session.state}</div>
+              <Button
+                icon
+                onClick={getDeleteAction}
+              >
+                <Icon name="trash alternate" />
+              </Button>
+            </div>
           </div>
         ) : (
           <div>

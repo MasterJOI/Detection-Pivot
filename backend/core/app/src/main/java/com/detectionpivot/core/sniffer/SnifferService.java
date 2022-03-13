@@ -26,12 +26,13 @@ public class SnifferService {
 
 	public boolean toggleSnifferState(Boolean state, UUID sessionId) {
 		Session currentSession = sessionService.getSessionById(sessionId);
-		System.out.println("thth: " + currentSession.getThreats());
 		if (state) {
 			snifferProvider.runSniffer(currentSession.getInterfaceName());
 			snifferProvider.sniff(currentSession.getId(), currentSession.getThreats());
 		} else {
-			snifferProvider.stopSniffer();
+			if (currentSession.isSnifferOn()) {
+				snifferProvider.stopSniffer();
+			}
 		}
 
 		return sessionService.updateSessionSnifferState(currentSession, state);

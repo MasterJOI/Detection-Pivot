@@ -2,11 +2,12 @@ package com.detectionpivot.core.domains.interfaces;
 
 import com.detectionpivot.core.sniffer.SnifferException;
 import com.detectionpivot.core.domains.interfaces.dto.InterfaceDataDto;
-import org.pcap4j.core.PcapNativeException;
-import org.pcap4j.core.PcapNetworkInterface;
-import org.pcap4j.core.Pcaps;
+import org.jnetpcap.PcapIf;
+import org.jnetpcap.Pcap;
 import org.springframework.stereotype.Service;
 
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,13 +15,16 @@ import java.util.stream.Collectors;
 public class InterfacesService {
 
 	public List<InterfaceDataDto> getAllInterfaces() {
-		try {
-			List<PcapNetworkInterface> interfaces = Pcaps.findAllDevs();
-			return interfaces.stream()
-					.map(InterfaceMapper.MAPPER::fromPcapNetworkInterfaceToInterfaceDataDto)
-					.collect(Collectors.toList());
-		} catch (PcapNativeException e) {
-			throw new SnifferException("An error occurs in the pcap native library", "sniffer-pcap");
+		List<PcapIf> allDevs = new ArrayList<>();
+		StringBuilder errBuf = new StringBuilder();
+
+		int r = Pcap.findAllDevs(allDevs, errBuf);
+		if (r != Pcap.OK || allDevs.isEmpty()) {
+			throw new SnifferException("Can't read list of devices, error is: " + errBuf, "sniffer-pcap");
 		}
+
+		return allDevs.stream()
+			.map(InterfaceMapper.MAPPER::fromPcapIfToInterfaceDataDto)
+			.collect(Collectors.toList());
 	}
 }

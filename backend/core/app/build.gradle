@@ -4,6 +4,11 @@ plugins {
 	id "io.freefair.lombok" version "6.3.0"
 }
 
+repositories {
+	mavenCentral()
+	maven { url "https://clojars.org/repo" }
+}
+
 dependencies {
 	def mapstruct = "1.3.1.Final"
 	def jjwt = "0.10.5"
@@ -27,7 +32,7 @@ dependencies {
 	implementation group: 'org.pcap4j', name: 'pcap4j-packetfactory-static', version: '1.8.2'
 	implementation group: 'org.pcap4j', name: 'pcap4j-core', version: '1.8.2'
 	implementation group: 'com.corundumstudio.socketio', name: 'netty-socketio', version: '1.7.19'
-
+	implementation group: 'jnetpcap', name: 'jnetpcap', version: '1.4.r1425-1f'
 
 
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

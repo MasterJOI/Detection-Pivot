@@ -2,7 +2,7 @@
   width: 100%;
   min-height: 5rem;
   max-height: 10rem;
-  padding-top: 1.5em;
+  padding: 1rem;
   border: 2px solid #F8F8F8;
   border-radius: 10px;
   box-shadow: none;
@@ -12,6 +12,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  .toggleDelWrp {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .toggleBtn {
+    margin-right: 2em;
+  }
 }
 
 
