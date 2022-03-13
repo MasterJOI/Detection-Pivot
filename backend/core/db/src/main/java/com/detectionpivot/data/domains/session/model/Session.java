@@ -33,7 +33,7 @@ public class Session extends BaseAuditableEntity {
 	@Column(name = "is_sniffer_on", nullable = false)
 	private boolean isSnifferOn;
 
-	@ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
+	@ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
 	@JoinTable(name = "session2threat", joinColumns = @JoinColumn(name = "session_id"),
 		inverseJoinColumns = @JoinColumn(name = "threat_id"))
 	private Set<Threat> threats = new HashSet<>();

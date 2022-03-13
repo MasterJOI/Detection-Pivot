@@ -24,7 +24,7 @@ function MenuSidebar({ toggled, toggleSidebar }) {
           Saved sessions
           <Link to="/sessions" />
         </MenuItem>
-        <SubMenu title="Indicators of Compromise (IoC)">
+        <SubMenu title="Indicators of Compromise ">
           <MenuItem>
             Create new IoC
             <Link to="/create-ioc" />
